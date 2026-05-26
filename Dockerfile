@@ -66,7 +66,8 @@ COPY docker/supervisord.conf /etc/supervisord.conf
 COPY docker/entrypoint.sh    /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Render injects PORT=10000 by default
-EXPOSE 10000
+# Render injects PORT=10000; Koyeb injects PORT=8000.
+# EXPOSE is informational — entrypoint.sh reads $PORT at runtime.
+EXPOSE 8000 10000
 
 ENTRYPOINT ["/entrypoint.sh"]

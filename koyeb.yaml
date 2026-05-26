@@ -1,0 +1,126 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# koyeb.yaml — Koyeb Free-Tier Deployment Blueprint
+# Docs: https://www.koyeb.com/docs/reference/koyeb-yaml
+#
+# QUICK START
+# ───────────
+# 1. Push this repo to GitHub.
+# 2. koyeb app init expense-tracker --config koyeb.yaml   (or use the dashboard)
+# 3. Set the two SECRET env vars below in the Koyeb dashboard:
+#      DATABASE_URL  ← full Aiven URI  (see "Aiven connection" section below)
+#      APP_KEY       ← leave blank; auto-generated at first boot
+# 4. koyeb deploy
+#
+# AIVEN POSTGRESQL CONNECTION
+# ───────────────────────────
+# In your Aiven console → Service → Overview → Connection information
+# Copy the "Service URI". It looks like:
+#
+#   postgres://avnadmin:AVNS_xxxxx@pg-abc123-yourproject.aivencloud.com:24543/defaultdb?sslmode=require
+#
+# Paste that exact string as the value of DATABASE_URL below (or in dashboard).
+# The entrypoint.sh normalises "postgres://" → "postgresql://" automatically.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: expense-tracker
+
+services:
+  - name: web
+    type: web
+
+    # ── Source ─────────────────────────────────────────────────────────────
+    git:
+      repository: github.com/Vanchha16/Expense   # ← update to your repo
+      branch: main
+
+    # ── Build ──────────────────────────────────────────────────────────────
+    docker:
+      dockerfile: ./Dockerfile
+      context: .
+
+    # ── Runtime ────────────────────────────────────────────────────────────
+    instance_type: free       # Koyeb nano (512 MB RAM, 0.1 vCPU) — never sleeps
+    regions:
+      - was                   # Washington DC; closest to Aiven's aws-us-east-1
+
+    # ── Network ────────────────────────────────────────────────────────────
+    ports:
+      - port: 8000            # Koyeb injects PORT=8000; entrypoint.sh reads $PORT
+        protocol: http
+    routes:
+      - path: /
+        port: 8000
+
+    # ── Health check ───────────────────────────────────────────────────────
+    # Koyeb pings /health every 30 s.  A 200 response keeps the instance alive.
+    health_checks:
+      - protocol: http
+        path: /health
+        port: 8000
+        interval: 30
+        timeout: 5
+        healthy_threshold: 1
+        unhealthy_threshold: 3
+
+    # ── Environment Variables ──────────────────────────────────────────────
+    # ⚠  DATABASE_URL and APP_KEY must be set as SECRETS in the Koyeb
+    #    dashboard (Settings → Secret), NOT hardcoded here, because this
+    #    file is committed to a public GitHub repository.
+    env:
+      # ── Platform ─────────────────────────────────────────────────────────
+      - key: PORT
+        value: "8000"
+
+      # ── Laravel Application ───────────────────────────────────────────────
+      - key: APP_NAME
+        value: ExpenseTrack
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_URL
+        value: https://expense-tracker-YOURAPP.koyeb.app   # ← update after first deploy
+
+      # APP_KEY: leave blank here — entrypoint.sh auto-generates a valid
+      # base64: key on first boot if this is missing or malformed.
+      - key: APP_KEY
+        value: ""
+
+      # ── Database (Aiven PostgreSQL) ────────────────────────────────────────
+      # Set DATABASE_URL as a Secret in the Koyeb dashboard. Format:
+      #   postgres://avnadmin:AVNS_xxx@pg-xxx.aivencloud.com:PORT/defaultdb?sslmode=require
+      #
+      # Alternatively supply individual vars if you prefer:
+      #   DB_HOST     = your-service.aivencloud.com
+      #   DB_PORT     = 24543   (Aiven uses non-standard ports)
+      #   DB_DATABASE = defaultdb
+      #   DB_USERNAME = avnadmin
+      #   DB_PASSWORD = AVNS_xxxxx   (set as a Secret!)
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_SSLMODE
+        value: require
+
+      # ── Sessions & Cache ────────────────────────────────────────────────
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_LIFETIME
+        value: "120"
+      - key: SESSION_SECURE_COOKIE
+        value: "true"
+      - key: CACHE_STORE
+        value: database
+
+      # ── Queue (no worker on free tier) ──────────────────────────────────
+      - key: QUEUE_CONNECTION
+        value: sync
+
+      # ── Logging ─────────────────────────────────────────────────────────
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: error
+
+      # ── Security ────────────────────────────────────────────────────────
+      - key: BCRYPT_ROUNDS
+        value: "12"
