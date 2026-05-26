@@ -23,6 +23,11 @@ foreach ([
     if (!is_dir($dir)) mkdir($dir, 0755, true);
 }
 
+putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
+putenv('APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php');
+putenv('APP_CONFIG_CACHE=/tmp/bootstrap/cache/config.php');
+putenv('APP_ROUTES_CACHE=/tmp/bootstrap/cache/routes-v7.php');
+
 $_SERVER['HTTPS']       = 'on';
 $_SERVER['SERVER_PORT'] = '443';
 
