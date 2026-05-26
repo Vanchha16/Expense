@@ -34,4 +34,4 @@ echo "[boot] Migrations complete"
 
 # ── 5. Hand off to supervisord (nginx + php-fpm) ─────────────────
 echo "[boot] Starting nginx + php-fpm via supervisor..."
-exec /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
+exec /usr/bin/supervisord -n -c /etc/supervisord.conf

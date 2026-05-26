@@ -62,7 +62,7 @@ RUN mkdir -p \
 COPY docker/php.ini          /usr/local/etc/php/conf.d/production.ini
 COPY docker/nginx.conf       /etc/nginx/nginx.conf
 COPY docker/nginx-site.conf  /etc/nginx/conf.d/default.conf
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/supervisord.conf /etc/supervisord.conf
 COPY docker/entrypoint.sh    /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
