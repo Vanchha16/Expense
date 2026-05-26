@@ -37,10 +37,8 @@ services:
       - key: APP_KEY
         generateValue: true
 
-      # Update to your actual Render URL after first deploy
-      # e.g. https://expense-tracker-xxxx.onrender.com
       - key: APP_URL
-        value: https://expense-tracker.onrender.com
+        value: https://expense-tracker-v4pe.onrender.com
 
       # ── Database ───────────────────────────────────────────────
       - key: DB_CONNECTION
