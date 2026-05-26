@@ -20,18 +20,26 @@ mkdir -p \
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 echo "[boot] storage permissions set"
 
-# ── 3. Laravel production optimisations ──────────────────────────
+# ── 3. Validate APP_KEY format ───────────────────────────────────
+# Render's generateValue produces a plain string; Laravel needs base64:<32-byte-key>
+if [[ -z "$APP_KEY" ]] || [[ "$APP_KEY" != base64:* ]]; then
+    echo "[boot] APP_KEY missing or wrong format — generating valid key..."
+    export APP_KEY=$(php -r "echo 'base64:' . base64_encode(random_bytes(32));")
+    echo "[boot] APP_KEY generated OK"
+fi
+
+# ── 4. Laravel production optimisations ──────────────────────────
 echo "[boot] Caching config / routes / views..."
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# ── 4. Run any pending database migrations ────────────────────────
+# ── 5. Run any pending database migrations ────────────────────────
 # --force bypasses the "are you sure?" prompt in production
 echo "[boot] Running database migrations..."
 php artisan migrate --force
 echo "[boot] Migrations complete"
 
-# ── 5. Hand off to supervisord (nginx + php-fpm) ─────────────────
+# ── 6. Hand off to supervisord (nginx + php-fpm) ─────────────────
 echo "[boot] Starting nginx + php-fpm via supervisor..."
 exec /usr/bin/supervisord -n -c /etc/supervisord.conf
