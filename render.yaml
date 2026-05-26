@@ -1,0 +1,78 @@
+# render.yaml — Render Blueprint for ExpenseTrack
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Deploy steps:
+#   1. Push this repo to GitHub.
+#   2. On Render dashboard → New → Blueprint, connect this repo.
+#   3. Set the DATABASE_URL env var manually (from Neon.tech / Supabase).
+#   4. Render will build the Docker image and deploy automatically.
+
+services:
+  - type: web
+    name: expense-tracker
+    runtime: docker
+    plan: free
+
+    # Build
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+
+    # Render pings this path every 30 s to determine service health.
+    # Also useful as a "keep-alive" endpoint.
+    healthCheckPath: /health
+
+    envVars:
+      # ── Application ────────────────────────────────────────────
+      - key: APP_NAME
+        value: ExpenseTrack
+
+      - key: APP_ENV
+        value: production
+
+      - key: APP_DEBUG
+        value: "false"
+
+      # Render auto-generates a cryptographically random value on first deploy
+      # and persists it across re-deploys — sessions stay valid.
+      - key: APP_KEY
+        generateValue: true
+
+      # Update to your actual Render URL after first deploy
+      # e.g. https://expense-tracker-xxxx.onrender.com
+      - key: APP_URL
+        value: https://expense-tracker.onrender.com
+
+      # ── Database ───────────────────────────────────────────────
+      - key: DB_CONNECTION
+        value: pgsql
+
+      # ⚠ Set this MANUALLY in the Render dashboard after creating
+      #   your Neon.tech / Supabase database. Format:
+      #   postgresql://user:pass@host/dbname?sslmode=require
+      - key: DATABASE_URL
+        sync: false
+
+      - key: DB_SSLMODE
+        value: require
+
+      # ── Sessions & Cache (database driver — survives restarts) ─
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_LIFETIME
+        value: "120"
+      - key: CACHE_STORE
+        value: database
+
+      # ── Queue (sync = no worker needed on free tier) ───────────
+      - key: QUEUE_CONNECTION
+        value: sync
+
+      # ── Logging (write to Render's log stream) ─────────────────
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: error
+
+      # ── Security ───────────────────────────────────────────────
+      - key: BCRYPT_ROUNDS
+        value: "12"
