@@ -11,8 +11,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Trust Render's reverse proxy so HTTPS is detected correctly
-        $middleware->trustProxies(at: '*');
+        // Render terminates SSL at its load balancer and forwards requests
+        // internally. Trust all proxy headers so Laravel generates https://
+        // URLs and marks session cookies as Secure.
+        $middleware->trustProxies(
+            at: '*',
+            headers: \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR
+                   | \Illuminate\Http\Request::HEADER_X_FORWARDED_HOST
+                   | \Illuminate\Http\Request::HEADER_X_FORWARDED_PORT
+                   | \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
